@@ -92,8 +92,8 @@ def setup_seed(seed):
     torch.backends.cudnn.deterministic = True
 
 def load_data(args):
-    rawdata_dir = args.rawpath
-    with open(args.rawpath + 'association_matrix.pkl', 'rb') as f:
+    rawdata_dir = args.data_path
+    with open(args.data_path + 'association_matrix.pkl', 'rb') as f:
         final_sample = pickle.load(f)
     final_positive_sample, final_negative_sample = Extract_positive_negative_samples(
         final_sample, addition_negative_number='all')
@@ -179,6 +179,8 @@ def load_data(args):
             print('EarlyStopping! Finish training!')
             print('Testing...')
             stopper.load_checkpoint(model)
+            if not os.path.exists('/weight'):
+                os.makedirs('/weight')
             torch.save(model.state_dict(), 'weight/fold_{}_{}.pth'.format(fold, args.weight_path))
             train_aupr, train_auc, train_acc, train_f1, train_recall, train_precision = validate(model, train_loader, args.device)
             val_aupr, val_auc, val_acc, val_f1, val_recall, val_precision = validate(model, val_loader, args.device)
@@ -239,7 +241,7 @@ def main():
     parser.add_argument('--test_batch_size', type=int, default=64,
                         metavar='N', help='input batch size for testing')
     parser.add_argument('--data_path', type=str, default='data/',
-                        metavar='STRING', help='rawpath')
+                        metavar='STRING', help='data_path')
     parser.add_argument('--device', type=str, default='cuda:0',
                         help='device')
     parser.add_argument('--patience', type=int, default=10,
