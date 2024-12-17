@@ -1,11 +1,14 @@
 # Requirement
 
 * python == 3.11
-* pytorch == 2.4.1+cu118
+* pytorch == 2.2.2+cu118
 * Numpy == 1.23.5
 * scikit-learn == 1.3.2
 * scipy == 1.11.4
 * pandas == 1.5.3
+* matplotlib == 3.10.0
+* tqdm == 4.67.1
+* fitlog == 0.9.15
 
 # Files
 
