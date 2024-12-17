@@ -1,6 +1,6 @@
 # Requirement
 
-* python == 3.6
+* python == 3.11
 * pytorch == 2.4.1+cu118
 * Numpy == 1.23.5
 * scikit-learn == 1.3.2
