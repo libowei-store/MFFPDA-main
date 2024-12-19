@@ -42,8 +42,6 @@ weight_path: Define the path to save the model.
 All files of Data and Code should be stored in the same folder to run the model.
 
 
-
-If you want to run the model
 run
 ```
 main.py
