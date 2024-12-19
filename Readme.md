@@ -43,10 +43,10 @@ All files of Data and Code should be stored in the same folder to run the model.
 
 
 
-Example:
-
+If you want to run the model
+run
 ```
-python main.py --mode train --epochs 200  --batch_size 128  --rawpath data/ --weight_path best
+main.py
 ```
 
 
