@@ -19,7 +19,7 @@ It contains a probiotic-disease association dataset, four calculated disease sim
 
 ## 3. network.py
 
- This function contains the network framework of our entire model and is based on pytorch 1.10.
+ This function contains the network framework of our entire model and is based on pytorch.
 
 ## 4. utils.py
 
@@ -27,7 +27,6 @@ This function contains the necessary processing subroutines.
 
 # Train and test 
 
-python main.py --mode mode --epochs number  --batch_size number  --rawpath path --weight_path path
 
 mode: Set the mode to train or test, then you can train the model or test the model
 
