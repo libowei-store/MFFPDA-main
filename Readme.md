@@ -16,6 +16,8 @@
 
 It contains a probiotic-disease association dataset, four calculated disease similarities, and a probiotic similarity matrix.
 
+## 2. source
+It includes several methods for extracting probiotics and disease features, such as jaccard similarity, cosine similarity, etc.
 
 ## 3. network.py
 
@@ -24,6 +26,10 @@ It contains a probiotic-disease association dataset, four calculated disease sim
 ## 4. utils.py
 
 This function contains the necessary processing subroutines.
+
+## 5. main.py
+
+The main function of the model includes some hyperparameter settings of the model, data reading methods, etc. If you want to modify the hyperparameters, you can modify them directly in this file.
 
 # Train and test 
 
