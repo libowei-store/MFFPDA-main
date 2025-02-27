@@ -175,9 +175,9 @@ len_after_AE = 128
 Cov1Dsize = 2
 Cov2Dsize = 4
 
-class MSDRP(nn.Module):
+class MFFPDA(nn.Module):
     def __init__(self, probiotics_dim, diseases_dim, embed_dim, batch_size, dropout1, dropout2):
-        super(MSDRP, self).__init__()
+        super(MFFPDA, self).__init__()
         self.probiotics_dim = probiotics_dim
         self.diseases_dim = diseases_dim
         self.batchsize = batch_size
