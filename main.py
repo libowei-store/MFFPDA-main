@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader
 
 import random
 from sklearn.model_selection import train_test_split, StratifiedKFold
-from network import MSDRP
+from network import MFFPDA
 from source.similarity import *
 
 import warnings
