@@ -144,7 +144,7 @@ def load_data(args):
         val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
 
 
-        model = MSDRP(576, 2115, args.embed_dim, args.batch_size, args.droprate, args.droprate).to(args.device)
+        model = MFFPDA(576, 2115, args.embed_dim, args.batch_size, args.droprate, args.droprate).to(args.device)
         if args.mode == 'train':
             Regression_criterion = nn.CrossEntropyLoss()
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
