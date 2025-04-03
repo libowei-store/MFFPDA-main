@@ -43,17 +43,9 @@ def read_raw_data(rawdata_dir, val_test_set):
         assoction_matrix[val_test_set[i][0]][val_test_set[i][1]] = 0
 
     probiotic_HIP_similarity = HIP_Calculate(assoction_matrix)
-    probiotic_sigmoid_similarity = sigmoid_similarity(assoction_matrix)
-    probiotic_Jaccard_similarity = Jaccard_similarity(assoction_matrix)
 
     disease_HIP_similarity = HIP_Calculate(assoction_matrix.T)
-    disease_sigmoid_similarity = sigmoid_similarity(assoction_matrix.T)
-    disease_Jaccard_similarity = Jaccard_similarity(assoction_matrix.T)
 
-    probiotic_dual_transformation_networks, disease_dual_transformation_networks = dual_transformation_networks(
-        assoction_matrix)
-    probiotic_dual_transformation_networks = Cosine_similarity(probiotic_dual_transformation_networks)
-    disease_dual_transformation_networks = Cosine_similarity(disease_dual_transformation_networks)
 
     probiotic_function_similarity1 = probiotic_function_similarity(assoction_matrix, disease_semantic_similarity1)
     probiotic_function_similarity2 = probiotic_function_similarity(assoction_matrix, disease_semantic_similarity2)
@@ -67,9 +59,6 @@ def read_raw_data(rawdata_dir, val_test_set):
 
     probiotic_feature.append(probiotic_squence_similarity)
     probiotic_feature.append(probiotic_HIP_similarity)
-    probiotic_feature.append(probiotic_sigmoid_similarity)
-    probiotic_feature.append(probiotic_Jaccard_similarity)
-    probiotic_feature.append(probiotic_dual_transformation_networks)
     probiotic_feature.append(probiotic_function_similarity1)
     probiotic_feature.append(probiotic_function_similarity2)
     probiotic_feature.append(probiotic_NFM_matrix)
@@ -79,9 +68,6 @@ def read_raw_data(rawdata_dir, val_test_set):
     disease_feature.append(disease_semantic_similarity1)
     disease_feature.append(disease_semantic_similarity2)
     disease_feature.append(disease_HIP_similarity)
-    disease_feature.append(disease_sigmoid_similarity)
-    disease_feature.append(disease_Jaccard_similarity)
-    disease_feature.append(disease_dual_transformation_networks)
     disease_feature.append(disease_NFM_matrix)
 
     return probiotic_feature, disease_feature
