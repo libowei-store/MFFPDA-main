@@ -58,20 +58,15 @@ class CrossAttention(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, features1, features2):
-        """
-        前向传播
-        :param features1: 第一组特征，形状为 (batch_size, seq_len1, feature_dim1)
-        :param features2: 第二组特征，形状为 (batch_size, seq_len2, feature_dim2)
-        :return: 加权后的特征表示，形状为 (batch_size, seq_len1, hidden_dim)
-        """
+
         # 计算Query、Key和Value
         Q = self.query_layer(features1)  # (batch_size, seq_len1, hidden_dim)
         K = self.key_layer(features2)    # (batch_size, seq_len2, hidden_dim)
         V = self.value_layer(features2)  # (batch_size, seq_len2, hidden_dim)
 
         # 计算注意力分数
-        attention_scores = torch.matmul(Q, K.transpose(-2, -1))  # (batch_size, seq_len1, seq_len2)
-        attention_scores = attention_scores / torch.sqrt(torch.tensor(self.hidden_dim, dtype=torch.float32))  # 缩放
+        attention_scores = torch.matmul(Q, K.transpose(-2, -1))  
+        attention_scores = attention_scores / torch.sqrt(torch.tensor(self.hidden_dim, dtype=torch.float32))  
         attention_weights = self.softmax(attention_scores)  # (batch_size, seq_len1, seq_len2)
 
         # 计算加权后的Value
