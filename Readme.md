@@ -17,7 +17,7 @@
 It contains a probiotic-disease association dataset, four calculated disease similarities, and a probiotic similarity matrix.
 
 ## 2. source
-It includes several methods for extracting probiotics and disease features, such as jaccard similarity, cosine similarity, etc.
+It includes several methods for extracting probiotics and disease features, such as HIP similarity, NFM similarity, etc.
 
 ## 3. network.py
 
