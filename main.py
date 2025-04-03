@@ -44,8 +44,6 @@ def train(model, loader, criterion, opt, device):
     print('Train Loss:{}'.format(loss))
     return loss
 
-def sigmoid(list):
-    return [1 / (1 + np.exp(-x)) for x in list]
 
 def validate(model, loader, device):
     model.eval()
@@ -63,7 +61,6 @@ def validate(model, loader, device):
 
     y_true = torch.cat(y_true, dim=0).cpu()
     y_pred = torch.cat(y_pred, dim=0).cpu()
-    y_pred2 = sigmoid(y_pred.numpy())
     for i in range(len(y_pred2)):
         if y_pred2[i] >= 0.5:
             y_pred2[i] = 1
