@@ -1,7 +1,10 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from sklearn.manifold import TSNE
+
 
 class MultiHeadAttention(torch.nn.Module):
     def __init__(self, input_dim, n_heads, ouput_dim=None):
@@ -33,147 +36,214 @@ class MultiHeadAttention(torch.nn.Module):
         output = self.fc(context)
         return output
 
-class EncoderLayer(torch.nn.Module):
-    def __init__(self, input_dim, n_heads):
-        super(EncoderLayer, self).__init__()
-        self.attn = MultiHeadAttention(input_dim, n_heads)
-        self.AN1 = torch.nn.LayerNorm(input_dim)
+# class EncoderLayer(torch.nn.Module):
+#     def __init__(self, input_dim, n_heads):
+#         super(EncoderLayer, self).__init__()
+#         self.attn = MultiHeadAttention(input_dim, n_heads)
+#         self.AN1 = torch.nn.LayerNorm(input_dim)
+#
+#         self.l1 = torch.nn.Linear(input_dim, input_dim)
+#         self.AN2 = torch.nn.LayerNorm(input_dim)
+#
+#     def forward(self, X):
+#         output = self.attn(X)
+#         X = self.AN1(output + X)
+#
+#         output = self.l1(X)
+#         X = self.AN2(output + X)
+#
+#         return X
+#
+# class AE1(torch.nn.Module):  # Joining together
+#     def __init__(self, vector_size):
+#         super(AE1, self).__init__()
+#
+#         self.vector_size = vector_size
+#
+#         self.l1 = torch.nn.Linear(self.vector_size, (self.vector_size + len_after_AE) // 2)
+#         self.bn1 = torch.nn.BatchNorm1d((self.vector_size + len_after_AE) // 2)
+#
+#         self.att2 = EncoderLayer((self.vector_size + len_after_AE) // 2, num_heads)
+#         self.l2 = torch.nn.Linear((self.vector_size + len_after_AE) // 2, len_after_AE)
+#
+#         self.l3 = torch.nn.Linear(len_after_AE, (self.vector_size + len_after_AE) // 2)
+#         self.bn3 = torch.nn.BatchNorm1d((self.vector_size + len_after_AE) // 2)
+#
+#         self.l4 = torch.nn.Linear((self.vector_size + len_after_AE) // 2, self.vector_size)
+#
+#         self.dr = torch.nn.Dropout(drop_out_rating)
+#
+#         self.ac = torch.nn.ReLU()
+#
+#     def forward(self, X1, X2):
+#         X = torch.cat((X1, X2), 1)
+#         X = self.dr(self.bn1(self.ac(self.l1(X))))
+#
+#         X = self.att2(X)
+#         X = self.l2(X)
+#
+#         X_AE = self.dr(self.bn3(self.ac(self.l3(X))))
+#
+#         X_AE = self.l4(X_AE)
+#
+#         return X, X_AE
+#
+# class AE2(torch.nn.Module):
+#     def __init__(self, vector_size):
+#         super(AE2, self).__init__()
+#         self.vector_size = vector_size // 2
+#         self.l1 = torch.nn.Linear(self.vector_size, (self.vector_size + len_after_AE) // 2)
+#         self.bn1 = torch.nn.BatchNorm1d((self.vector_size + len_after_AE) // 2)
+#         self.att1 = EncoderLayer((self.vector_size + len_after_AE) // 2, num_heads)
+#         self.l2 = torch.nn.Linear((self.vector_size + len_after_AE) // 2, len_after_AE)
+#         self.l3 = torch.nn.Linear(len_after_AE, (self.vector_size + len_after_AE) // 2)
+#         self.bn3 = torch.nn.BatchNorm1d((self.vector_size + len_after_AE) // 2)
+#         self.l4 = torch.nn.Linear((self.vector_size + len_after_AE) // 2, self.vector_size)
+#         self.dr = torch.nn.Dropout(drop_out_rating)
+#         self.ac = torch.nn.ReLU()
+#
+#     def forward(self, X1, X2):
+#         X = X1 + X2
+#         X = self.dr(self.bn1(self.ac(self.l1(X))))
+#         X = self.att1(X)
+#         X = self.l2(X)
+#         X_AE = self.dr(self.bn3(self.ac(self.l3(X))))
+#         X_AE = self.l4(X_AE)
+#         return X, X_AE
+#
+# class cov(torch.nn.Module):
+#     def __init__(self, vector_size):
+#         super(cov, self).__init__()
+#
+#         self.vector_size = vector_size
+#         self.co2_1 = torch.nn.Conv2d(1, 1, kernel_size=(2, Cov2Dsize))
+#         self.co1_1 = torch.nn.Conv1d(1, 1, kernel_size=Cov1Dsize)
+#         self.pool1 = torch.nn.AdaptiveAvgPool1d(len_after_AE)
+#         self.ac = torch.nn.ReLU()
+#
+#     def forward(self, X1, X2):
+#         X = torch.cat((X1, X2), 0)
+#
+#         X = X.view(-1, 1, 2, self.vector_size // 2)
+#
+#         X = self.ac(self.co2_1(X))
+#
+#         X = X.view(-1, self.vector_size // 2 - Cov2Dsize + 1, 1)
+#         X = X.permute(0, 2, 1)
+#         X = self.ac(self.co1_1(X))
+#
+#         X = self.pool1(X)
+#
+#         X = X.contiguous().view(-1, len_after_AE)
+#
+#         return X
 
-        self.l1 = torch.nn.Linear(input_dim, input_dim)
-        self.AN2 = torch.nn.LayerNorm(input_dim)
+class CrossAttention(nn.Module):
+    def __init__(self, feature_dim1, feature_dim2, hidden_dim):
+        super(CrossAttention, self).__init__()
+        self.feature_dim1 = feature_dim1
+        self.feature_dim2 = feature_dim2
+        self.hidden_dim = hidden_dim
 
-    def forward(self, X):
-        output = self.attn(X)
-        X = self.AN1(output + X)
+        # 定义线性变换层，用于计算Query、Key和Value
+        self.query_layer = nn.Linear(feature_dim1, hidden_dim)  # 用于第一组特征
+        self.key_layer = nn.Linear(feature_dim2, hidden_dim)    # 用于第二组特征
+        self.value_layer = nn.Linear(feature_dim2, hidden_dim)  # 用于第二组特征
 
-        output = self.l1(X)
-        X = self.AN2(output + X)
+        self.mlp = nn.Linear(feature_dim1, hidden_dim)
+        # 定义softmax层，用于计算注意力权重
+        self.softmax = nn.Softmax(dim=-1)
 
-        return X
+        self.batch_norm1 = nn.BatchNorm1d(hidden_dim)
+        self.batch_norm2 = nn.BatchNorm1d(hidden_dim)
+        self.relu = nn.ReLU()
 
-class AEC(torch.nn.Module):  # Joining together
-    def __init__(self, vector_size):
-        super(AEC, self).__init__()
+    def forward(self, features1, features2):
+        """
+        前向传播
+        :param features1: 第一组特征，形状为 (batch_size, seq_len1, feature_dim1)
+        :param features2: 第二组特征，形状为 (batch_size, seq_len2, feature_dim2)
+        :return: 加权后的特征表示，形状为 (batch_size, seq_len1, hidden_dim)
+        """
+        # 计算Query、Key和Value
+        Q = self.query_layer(features1)  # (batch_size, seq_len1, hidden_dim)
+        K = self.key_layer(features2)    # (batch_size, seq_len2, hidden_dim)
+        V = self.value_layer(features2)  # (batch_size, seq_len2, hidden_dim)
 
-        self.vector_size = vector_size
+        # 计算注意力分数
+        attention_scores = torch.matmul(Q, K.transpose(-2, -1))  # (batch_size, seq_len1, seq_len2)
+        attention_scores = attention_scores / torch.sqrt(torch.tensor(self.hidden_dim, dtype=torch.float32))  # 缩放
+        attention_weights = self.softmax(attention_scores)  # (batch_size, seq_len1, seq_len2)
 
-        self.l1 = torch.nn.Linear(self.vector_size, (self.vector_size + len_after_AE) // 2)
-        self.bn1 = torch.nn.BatchNorm1d((self.vector_size + len_after_AE) // 2)
+        # 计算加权后的Value
+        attended_features = torch.matmul(attention_weights, V)  # (batch_size, seq_len1, hidden_dim)
+        features1 = self.relu(self.batch_norm1(self.mlp(features1)))
+        attended_features = self.batch_norm2(attended_features+features1)
 
-        self.att2 = EncoderLayer((self.vector_size + len_after_AE) // 2, num_heads)
-        self.l2 = torch.nn.Linear((self.vector_size + len_after_AE) // 2, len_after_AE)
+        return attended_features
 
-        self.l3 = torch.nn.Linear(len_after_AE, (self.vector_size + len_after_AE) // 2)
-        self.bn3 = torch.nn.BatchNorm1d((self.vector_size + len_after_AE) // 2)
+class BiCrossAttention(nn.Module):
+    def __init__(self, feature_dim1, feature_dim2, hidden_dim1, hidden_dim2):
+        super(BiCrossAttention, self).__init__()
+        self.feature_dim1 = feature_dim1
+        self.feature_dim2 = feature_dim2
+        self.hidden_dim1 = hidden_dim1
+        self.hidden_dim2 = hidden_dim2
 
-        self.l4 = torch.nn.Linear((self.vector_size + len_after_AE) // 2, self.vector_size)
+        # 定义线性变换层，用于计算Query、Key和Value
+        self.cross_attention1 = CrossAttention(feature_dim1, feature_dim2, hidden_dim1)
+        self.cross_attention2 = CrossAttention(feature_dim2, feature_dim1, hidden_dim1)
+        self.attention = MultiHeadAttention(hidden_dim1 * 2, n_heads=2)
 
-        self.dr = torch.nn.Dropout(drop_out_rating)
+        self.feed_forward = nn.Sequential(
+            nn.Linear(hidden_dim1 * 2, hidden_dim1),
+            nn.ReLU(),
+            nn.Linear(hidden_dim1, hidden_dim2)
+        )
+        # 定义softmax层，用于计算注意力权重
+        self.softmax = nn.Softmax(dim=-1)
 
-        self.ac = torch.nn.ReLU()
+        self.batch_norm1 = nn.BatchNorm1d(hidden_dim1*2)
+        self.batch_norm2 = nn.BatchNorm1d(hidden_dim2)
+        self.relu = nn.ReLU()
 
-    def forward(self, X1, X2):
-        X = torch.cat((X1, X2), 1)
-        X = self.dr(self.bn1(self.ac(self.l1(X))))
+    def forward(self, features1, features2):
 
-        X = self.att2(X)
-        X = self.l2(X)
+        # 计算加权后的Value
+        attended_features1 = self.cross_attention1(features1, features2)
+        attended_features2 = self.cross_attention2(features2, features1)
+        all_attended_features = torch.cat((attended_features1, attended_features2), 1)
+        attended_features = self.attention(all_attended_features)
+        attended_features = self.relu(self.batch_norm1(attended_features + all_attended_features))
 
-        X_AE = self.dr(self.bn3(self.ac(self.l3(X))))
+        attended_features_end = self.feed_forward(attended_features)
+        # attended_features_end = self.batch_norm2(attended_features_end + attended_features)
 
-        X_AE = self.l4(X_AE)
+        return attended_features_end
 
-        return X, X_AE
+# class Interaction(torch.nn.Module):
+#     def __init__(self, input_dim):
+#         super(Interaction, self).__init__()
+#
+#         self.ae1 = AE1(input_dim)  # Joining together
+#         self.ae2 = AE2(input_dim)
+#         # self.cov = cov(input_dim)  # cov
+#
+#
+#     def forward(self, X1, X2):
+#         X_aec, X_AE1 = self.ae1(X1, X2)
+#         X_aea, X_AE2 = self.ae2(X1, X2)
+#         # X_cnn = self.cov(X1, X2)
+#
+#         # X = torch.cat((X1, X2, X3), 1)
+#         # return X_aec, X_aea, X_cnn, X_AE1, X_AE2
+#         return X_aec, X_aea, X_AE1, X_AE2
 
-class AEA(torch.nn.Module):
-    def __init__(self, vector_size):
-        super(AEA, self).__init__()
-
-        self.vector_size = vector_size // 2
-
-        self.l1 = torch.nn.Linear(self.vector_size, (self.vector_size + len_after_AE) // 2)
-        self.bn1 = torch.nn.BatchNorm1d((self.vector_size + len_after_AE) // 2)
-
-        self.att1 = EncoderLayer((self.vector_size + len_after_AE) // 2, num_heads)
-        self.l2 = torch.nn.Linear((self.vector_size + len_after_AE) // 2, len_after_AE)
-
-
-        self.l3 = torch.nn.Linear(len_after_AE, (self.vector_size + len_after_AE) // 2)
-        self.bn3 = torch.nn.BatchNorm1d((self.vector_size + len_after_AE) // 2)
-
-        self.l4 = torch.nn.Linear((self.vector_size + len_after_AE) // 2, self.vector_size)
-
-        self.dr = torch.nn.Dropout(drop_out_rating)
-
-
-        self.ac = torch.nn.ReLU()
-    def forward(self, X1, X2):
-        X = X1 + X2
-
-        X = self.dr(self.bn1(self.ac(self.l1(X))))
-
-        X = self.att1(X)
-        X = self.l2(X)
-
-        X_AE = self.dr(self.bn3(self.ac(self.l3(X))))
-
-        X_AE = self.l4(X_AE)
-        # X_AE = torch.cat((X_AE, X_AE), 1)
-
-        return X, X_AE
-
-class COV(torch.nn.Module):
-    def __init__(self, vector_size):
-        super(COV, self).__init__()
-
-        self.vector_size = vector_size
-
-        self.co2_1 = torch.nn.Conv2d(1, 1, kernel_size=(2, Cov2Dsize))
-        self.co1_1 = torch.nn.Conv1d(1, 1, kernel_size=Cov1Dsize)
-        self.pool1 = torch.nn.AdaptiveAvgPool1d(len_after_AE)
-
-
-        self.ac = torch.nn.ReLU()
-
-    def forward(self, X1, X2):
-        X = torch.cat((X1, X2), 0)
-
-        X = X.view(-1, 1, 2, self.vector_size // 2)
-
-        X = self.ac(self.co2_1(X))
-
-        X = X.view(-1, self.vector_size // 2 - Cov2Dsize + 1, 1)
-        X = X.permute(0, 2, 1)
-        X = self.ac(self.co1_1(X))
-
-        X = self.pool1(X)
-
-        X = X.contiguous().view(-1, len_after_AE)
-
-        return X
-
-class Interaction(torch.nn.Module):
-    def __init__(self, input_dim):
-        super(Interaction, self).__init__()
-
-        self.ae1 = AEC(input_dim)  # Joining together
-        self.ae2 = AEA(input_dim)
-        self.cov = COV(input_dim)  # cov
-
-
-    def forward(self, X1, X2):
-        X_aec, X_AE1 = self.ae1(X1, X2)
-        X_aea, X_AE2 = self.ae2(X1, X2)
-        X_cnn = self.cov(X1, X2)
-
-        # X = torch.cat((X1, X2, X3), 1)
-        return X_aec, X_aea, X_cnn, X_AE1, X_AE2
-
-num_heads = 4
-drop_out_rating = 0.3
-len_after_AE = 128
-Cov1Dsize = 2
-Cov2Dsize = 4
+# num_heads = 4
+# drop_out_rating = 0.3
+# len_after_AE = 128
+# Cov1Dsize = 2
+# Cov2Dsize = 4
 
 class MFFPDA(nn.Module):
     def __init__(self, probiotics_dim, diseases_dim, embed_dim, batch_size, dropout1, dropout2):
@@ -181,14 +251,14 @@ class MFFPDA(nn.Module):
         self.probiotics_dim = probiotics_dim
         self.diseases_dim = diseases_dim
         self.batchsize = batch_size
-        self.probiotic_dim = (self.probiotics_dim) // 8
-        self.disease_dim = (self.diseases_dim) // 9
-        self.total_layer_emb = 1024
+        self.probiotic_dim = self.probiotics_dim // 5
+        self.disease_dim = self.diseases_dim //6
+        self.total_layer_emb = 768
         self.embed_dim = embed_dim
         self.dropout1 = dropout1
         self.dropout2 = dropout2
 
-        self.probiotic_layer = nn.Linear(self.embed_dim*8, self.embed_dim)
+        self.probiotic_layer = nn.Linear(self.embed_dim*5, self.embed_dim)
         self.probiotic_layer_1 = nn.Linear(self.embed_dim, self.embed_dim)
         self.probiotic_layer1 = nn.Linear(self.probiotic_dim, self.embed_dim)
         self.probiotic_layer1_1 = nn.Linear(self.embed_dim, self.embed_dim)
@@ -206,9 +276,11 @@ class MFFPDA(nn.Module):
         self.probiotic_layer7_1 = nn.Linear(self.embed_dim, self.embed_dim)
         self.probiotic_layer8 = nn.Linear(self.probiotic_dim, self.embed_dim)
         self.probiotic_layer8_1 = nn.Linear(self.embed_dim, self.embed_dim)
+        self.probiotic_layer9 = nn.Linear(self.probiotic_dim, self.embed_dim)
+        self.probiotic_layer9_1 = nn.Linear(self.embed_dim, self.embed_dim)
 
 
-        self.disease_layer = nn.Linear(self.embed_dim*9, self.embed_dim)
+        self.disease_layer = nn.Linear(self.embed_dim*6, self.embed_dim)
         self.disease_layer_1 = nn.Linear(self.embed_dim, self.embed_dim)
         self.disease_layer1 = nn.Linear(self.disease_dim, self.embed_dim)
         self.disease_layer1_1 = nn.Linear(self.embed_dim, self.embed_dim)
@@ -228,6 +300,8 @@ class MFFPDA(nn.Module):
         self.disease_layer8_1 = nn.Linear(self.embed_dim, self.embed_dim)
         self.disease_layer9 = nn.Linear(self.disease_dim, self.embed_dim)
         self.disease_layer9_1 = nn.Linear(self.embed_dim, self.embed_dim)
+        self.disease_layer10 = nn.Linear(self.disease_dim, self.embed_dim)
+        self.disease_layer10_1 = nn.Linear(self.embed_dim, self.embed_dim)
 
 
 
@@ -240,6 +314,7 @@ class MFFPDA(nn.Module):
         self.probiotic6_bn = nn.BatchNorm1d(self.embed_dim, momentum=0.5)
         self.probiotic7_bn = nn.BatchNorm1d(self.embed_dim, momentum=0.5)
         self.probiotic8_bn = nn.BatchNorm1d(self.embed_dim, momentum=0.5)
+        self.probiotic9_bn = nn.BatchNorm1d(self.embed_dim, momentum=0.5)
 
 
         self.disease_bn = nn.BatchNorm1d(self.embed_dim, momentum=0.5)
@@ -252,13 +327,16 @@ class MFFPDA(nn.Module):
         self.disease7_bn = nn.BatchNorm1d(self.embed_dim, momentum=0.5)
         self.disease8_bn = nn.BatchNorm1d(self.embed_dim, momentum=0.5)
         self.disease9_bn = nn.BatchNorm1d(self.embed_dim, momentum=0.5)
+        self.disease10_bn = nn.BatchNorm1d(self.embed_dim, momentum=0.5)
 
-        self.probiotic_multihead = MultiHeadAttention(1024, n_heads=8)
-        self.disease_multihead = MultiHeadAttention(1152, n_heads=9)
+        self.probiotic_multihead = MultiHeadAttention(self.embed_dim*5, n_heads=5)
+        self.disease_multihead = MultiHeadAttention(self.embed_dim*6, n_heads=6)
+
+        self.attention = BiCrossAttention(self.embed_dim*5, self.embed_dim*6, 512, 128)
 
         # cnn setting
         self.channel_size = 16
-        self.number_map = 8 * 9
+        self.number_map = 5 * 6
 
         ##外积残差块
         self.Outer_product_rb_1 = nn.Sequential(
@@ -301,44 +379,7 @@ class MFFPDA(nn.Module):
             nn.Linear(512, 128)
         )
 
-        self.AEC_linear = nn.Sequential(
-            nn.Linear(self.embed_dim * self.number_map, 1024),
-            nn.ELU(),
-            nn.Dropout(self.dropout2),
-            nn.Linear(1024, 1024),
-            nn.ELU(),
-            nn.Dropout(self.dropout2),
-            nn.Linear(1024, 512),
-            nn.ELU(),
-            nn.Dropout(self.dropout2),
-            nn.Linear(512, 128)
-        )
 
-        self.AEA_linear = nn.Sequential(
-            nn.Linear(self.embed_dim * self.number_map, 1024),
-            nn.ELU(),
-            nn.Dropout(self.dropout2),
-            nn.Linear(1024, 1024),
-            nn.ELU(),
-            nn.Dropout(self.dropout2),
-            nn.Linear(1024, 512),
-            nn.ELU(),
-            nn.Dropout(self.dropout2),
-            nn.Linear(512, 128)
-        )
-
-        self.CNN_linear = nn.Sequential(
-            nn.Linear(self.embed_dim * self.number_map, 1024),
-            nn.ELU(),
-            nn.Dropout(self.dropout2),
-            nn.Linear(1024, 1024),
-            nn.ELU(),
-            nn.Dropout(self.dropout2),
-            nn.Linear(1024, 512),
-            nn.ELU(),
-            nn.Dropout(self.dropout2),
-            nn.Linear(512, 128)
-        )
 
         self.total_layer = nn.Linear(self.total_layer_emb, self.channel_size * 4)
         self.total_bn = nn.BatchNorm1d((self.channel_size * 4 + 2 * self.embed_dim), momentum=0.5)
@@ -348,20 +389,23 @@ class MFFPDA(nn.Module):
             nn.Dropout(self.dropout2),
             nn.Linear(512, 1)
         )
-        self.probiotic_fused_network_layer = nn.Linear(self.embed_dim * 8, self.embed_dim)
+        self.probiotic_fused_network_layer = nn.Linear(self.embed_dim * 5, self.embed_dim)
         self.probiotic_fused_network_bn = nn.BatchNorm1d(self.embed_dim, momentum=0.5)
         self.probiotic_fused_network_layer_1 = nn.Linear(self.embed_dim, self.embed_dim)
 
-        self.disease_fused_network_layer = nn.Linear(self.embed_dim * 9, self.embed_dim)
+        self.disease_fused_network_layer = nn.Linear(self.embed_dim * 6, self.embed_dim)
         self.disease_fused_network_bn = nn.BatchNorm1d(self.embed_dim, momentum=0.5)
         self.disease_fused_network_layer_1 = nn.Linear(self.embed_dim, self.embed_dim)
 
     def forward(self, probiotic_features, disease_features, device):
 
-        probiotic1, probiotic2, probiotic3, probiotic4, probiotic5, probiotic6, probiotic7, probiotic8 = probiotic_features.chunk(
-            8, 1)
-        disease1, disease2, disease3, disease4, disease5, disease6, disease7, disease8, disease9 = disease_features.chunk(
-            9, 1)
+        #, probiotic6, probiotic7, probiotic8
+        probiotic1, probiotic2, probiotic3, probiotic4, probiotic5 = probiotic_features.chunk(
+            5, 1)
+
+        #, disease7, disease8, disease9
+        disease1, disease2, disease3, disease4, disease5, disease6 = disease_features.chunk(
+            6, 1)
 
         x_probiotic1 = F.relu(self.probiotic1_bn(self.probiotic_layer1(probiotic1.float().to(device))), inplace=True)
         x_probiotic1 = F.dropout(x_probiotic1, training=self.training, p=self.dropout1)
@@ -383,19 +427,24 @@ class MFFPDA(nn.Module):
         x_probiotic5 = F.dropout(x_probiotic5, training=self.training, p=self.dropout1)
         x_probiotic5 = self.probiotic_layer5_1(x_probiotic5)
 
-        x_probiotic6 = F.relu(self.probiotic6_bn(self.probiotic_layer6(probiotic6.float().to(device))), inplace=True)
-        x_probiotic6 = F.dropout(x_probiotic6, training=self.training, p=self.dropout1)
-        x_probiotic6 = self.probiotic_layer6_1(x_probiotic6)
+        # x_probiotic6 = F.relu(self.probiotic6_bn(self.probiotic_layer6(probiotic6.float().to(device))), inplace=True)
+        # x_probiotic6 = F.dropout(x_probiotic6, training=self.training, p=self.dropout1)
+        # x_probiotic6 = self.probiotic_layer6_1(x_probiotic6)
+        #
+        # x_probiotic7 = F.relu(self.probiotic7_bn(self.probiotic_layer7(probiotic7.float().to(device))), inplace=True)
+        # x_probiotic7 = F.dropout(x_probiotic7, training=self.training, p=self.dropout1)
+        # x_probiotic7 = self.probiotic_layer7_1(x_probiotic7)
+        #
+        # x_probiotic8 = F.relu(self.probiotic8_bn(self.probiotic_layer8(probiotic8.float().to(device))), inplace=True)
+        # x_probiotic8 = F.dropout(x_probiotic8, training=self.training, p=self.dropout1)
+        # x_probiotic8 = self.probiotic_layer8_1(x_probiotic8)
 
-        x_probiotic7 = F.relu(self.probiotic7_bn(self.probiotic_layer7(probiotic7.float().to(device))), inplace=True)
-        x_probiotic7 = F.dropout(x_probiotic7, training=self.training, p=self.dropout1)
-        x_probiotic7 = self.probiotic_layer7_1(x_probiotic7)
+        # x_probiotic9 = F.relu(self.probiotic9_bn(self.probiotic_layer9(probiotic9.float().to(device))), inplace=True)
+        # x_probiotic9 = F.dropout(x_probiotic9, training=self.training, p=self.dropout1)
+        # x_probiotic9 = self.probiotic_layer9_1(x_probiotic9)
 
-        x_probiotic8 = F.relu(self.probiotic8_bn(self.probiotic_layer8(probiotic8.float().to(device))), inplace=True)
-        x_probiotic8 = F.dropout(x_probiotic8, training=self.training, p=self.dropout1)
-        x_probiotic8 = self.probiotic_layer8_1(x_probiotic8)
-
-        probiotics = [x_probiotic1, x_probiotic2, x_probiotic3, x_probiotic4, x_probiotic5, x_probiotic6, x_probiotic7, x_probiotic8]
+        #, x_probiotic6, x_probiotic7, x_probiotic8
+        probiotics = [x_probiotic1, x_probiotic2, x_probiotic3, x_probiotic4, x_probiotic5]
 
         x_disease1 = F.relu(self.disease1_bn(self.disease_layer1(disease1.float().to(device))), inplace=True)
         x_disease1 = F.dropout(x_disease1, training=self.training, p=self.dropout1)
@@ -421,23 +470,29 @@ class MFFPDA(nn.Module):
         x_disease6 = F.dropout(x_disease6, training=self.training, p=self.dropout1)
         x_disease6 = self.disease_layer6_1(x_disease6)
 
-        x_disease7 = F.relu(self.disease7_bn(self.disease_layer7(disease7.float().to(device))), inplace=True)
-        x_disease7 = F.dropout(x_disease7, training=self.training, p=self.dropout1)
-        x_disease7 = self.disease_layer7_1(x_disease7)
+        # x_disease7 = F.relu(self.disease7_bn(self.disease_layer7(disease7.float().to(device))), inplace=True)
+        # x_disease7 = F.dropout(x_disease7, training=self.training, p=self.dropout1)
+        # x_disease7 = self.disease_layer7_1(x_disease7)
+        #
+        # x_disease8 = F.relu(self.disease8_bn(self.disease_layer8(disease8.float().to(device))), inplace=True)
+        # x_disease8 = F.dropout(x_disease8, training=self.training, p=self.dropout1)
+        # x_disease8 = self.disease_layer8_1(x_disease8)
+        #
+        # x_disease9 = F.relu(self.disease9_bn(self.disease_layer9(disease9.float().to(device))), inplace=True)
+        # x_disease9 = F.dropout(x_disease9, training=self.training, p=self.dropout1)
+        # x_disease9 = self.disease_layer9_1(x_disease9)
 
-        x_disease8 = F.relu(self.disease8_bn(self.disease_layer8(disease8.float().to(device))), inplace=True)
-        x_disease8 = F.dropout(x_disease8, training=self.training, p=self.dropout1)
-        x_disease8 = self.disease_layer8_1(x_disease8)
+        # x_disease10 = F.relu(self.disease10_bn(self.disease_layer10(disease10.float().to(device))), inplace=True)
+        # x_disease10 = F.dropout(x_disease10, training=self.training, p=self.dropout1)
+        # x_disease10 = self.disease_layer10_1(x_disease10)
 
-        x_disease9 = F.relu(self.disease9_bn(self.disease_layer9(disease9.float().to(device))), inplace=True)
-        x_disease9 = F.dropout(x_disease9, training=self.training, p=self.dropout1)
-        x_disease9 = self.disease_layer9_1(x_disease9)
-
-
-        diseases = [x_disease1, x_disease2, x_disease3, x_disease4, x_disease5, x_disease6, x_disease7, x_disease8, x_disease9]
+        #, x_disease7, x_disease8, x_disease9
+        diseases = [x_disease1, x_disease2, x_disease3, x_disease4, x_disease5, x_disease6]
 
         all_probiotics = torch.cat(probiotics, dim=1)
         all_diseases = torch.cat(diseases, dim=1)
+
+        probiotic_disease_attention = self.attention(all_probiotics, all_diseases)
 
         probiotic_fused_network = self.probiotic_multihead(all_probiotics.to(torch.float32))
         disease_fused_network = self.disease_multihead(all_diseases.to(torch.float32))
@@ -496,44 +551,17 @@ class MFFPDA(nn.Module):
 
         Outer_Product = Outer_product_feature_map.view((Inner_Product.shape[0], -1))
         ###########################################################################################################
-        inter = Interaction(self.embed_dim * 2).to(device)
-        CNN, AEC, AEA, AEC_dec, AEA_dec = [], [], [], [], []
 
-        for i in range(len(probiotics)):
-            for j in range(len(diseases)):
-                aec, aea, cnn, aec_dec, aea_dec = inter(probiotics[i], diseases[j])
-                CNN.append(cnn)
-                AEC.append(aec)
-                AEA.append(aea)
-                AEC_dec.append(aec_dec)
-                AEA_dec.append(aea_dec)
-        AEC_map = torch.cat(AEC, dim=1)
-        AEA_map = torch.cat(AEA, dim=1)
-        CNN_map = torch.cat(CNN, dim=1)
-        AEC_map_dec = torch.cat(AEC_dec, dim=1)
-        AEA_map_dec = torch.cat(AEA_dec, dim=1)
 
-        AEC_map = self.AEC_linear(AEC_map)
-        AEA_map = self.AEA_linear(AEA_map)
-        CNN_map = self.CNN_linear(CNN_map)
-        input1, input2 = torch.tensor([]), torch.tensor([])
-        for i in range(len(probiotics)):
-            for j in range(len(diseases)):
-                if i == 0 and j == 0:
-                    input1 = torch.cat((probiotics[i], diseases[j]), dim=1)
-                    input2 = probiotics[i] + diseases[j]
-                else:
-                    input1 = torch.cat((input1, torch.cat((probiotics[i], diseases[j]), dim=1)), dim=1)
-                    input2 = torch.cat((input2, probiotics[i] + diseases[j]), dim=1)
-
-        X = torch.cat((AEC_map, AEA_map, CNN_map), dim=1)
         ###########################################################################################################
-        Inter = torch.cat((X, Inner_Product, Outer_Product), dim=1)
+        # Inter = torch.cat((X, Inner_Product, Outer_Product), dim=1)
+        Inter = torch.cat((Inner_Product, Outer_Product, probiotic_disease_attention), dim=1)
+        # Inter = probiotic_disease_attention
         total = torch.cat((probiotic_fused_network, disease_fused_network, Inter), dim=1)
         total = F.relu(self.total_layer(total), inplace=True)
         total = F.dropout(total, training=self.training, p=self.dropout2)
 
         regression = self.con_layer(total)
+        regression = nn.Sigmoid()(regression)
 
-
-        return regression.squeeze(), input1, input2, AEC_map_dec, AEA_map_dec
+        return regression.squeeze()
