@@ -3,7 +3,6 @@ import numpy as np
 import torch
 
 from source.similarity import *
-from source.dual_transformation_networks import dual_transformation_networks
 from source.NMF import NMF_calculate
 from source.probiotic_function_similarity import probiotic_function_similarity
 import random
