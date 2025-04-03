@@ -36,107 +36,6 @@ class MultiHeadAttention(torch.nn.Module):
         output = self.fc(context)
         return output
 
-# class EncoderLayer(torch.nn.Module):
-#     def __init__(self, input_dim, n_heads):
-#         super(EncoderLayer, self).__init__()
-#         self.attn = MultiHeadAttention(input_dim, n_heads)
-#         self.AN1 = torch.nn.LayerNorm(input_dim)
-#
-#         self.l1 = torch.nn.Linear(input_dim, input_dim)
-#         self.AN2 = torch.nn.LayerNorm(input_dim)
-#
-#     def forward(self, X):
-#         output = self.attn(X)
-#         X = self.AN1(output + X)
-#
-#         output = self.l1(X)
-#         X = self.AN2(output + X)
-#
-#         return X
-#
-# class AE1(torch.nn.Module):  # Joining together
-#     def __init__(self, vector_size):
-#         super(AE1, self).__init__()
-#
-#         self.vector_size = vector_size
-#
-#         self.l1 = torch.nn.Linear(self.vector_size, (self.vector_size + len_after_AE) // 2)
-#         self.bn1 = torch.nn.BatchNorm1d((self.vector_size + len_after_AE) // 2)
-#
-#         self.att2 = EncoderLayer((self.vector_size + len_after_AE) // 2, num_heads)
-#         self.l2 = torch.nn.Linear((self.vector_size + len_after_AE) // 2, len_after_AE)
-#
-#         self.l3 = torch.nn.Linear(len_after_AE, (self.vector_size + len_after_AE) // 2)
-#         self.bn3 = torch.nn.BatchNorm1d((self.vector_size + len_after_AE) // 2)
-#
-#         self.l4 = torch.nn.Linear((self.vector_size + len_after_AE) // 2, self.vector_size)
-#
-#         self.dr = torch.nn.Dropout(drop_out_rating)
-#
-#         self.ac = torch.nn.ReLU()
-#
-#     def forward(self, X1, X2):
-#         X = torch.cat((X1, X2), 1)
-#         X = self.dr(self.bn1(self.ac(self.l1(X))))
-#
-#         X = self.att2(X)
-#         X = self.l2(X)
-#
-#         X_AE = self.dr(self.bn3(self.ac(self.l3(X))))
-#
-#         X_AE = self.l4(X_AE)
-#
-#         return X, X_AE
-#
-# class AE2(torch.nn.Module):
-#     def __init__(self, vector_size):
-#         super(AE2, self).__init__()
-#         self.vector_size = vector_size // 2
-#         self.l1 = torch.nn.Linear(self.vector_size, (self.vector_size + len_after_AE) // 2)
-#         self.bn1 = torch.nn.BatchNorm1d((self.vector_size + len_after_AE) // 2)
-#         self.att1 = EncoderLayer((self.vector_size + len_after_AE) // 2, num_heads)
-#         self.l2 = torch.nn.Linear((self.vector_size + len_after_AE) // 2, len_after_AE)
-#         self.l3 = torch.nn.Linear(len_after_AE, (self.vector_size + len_after_AE) // 2)
-#         self.bn3 = torch.nn.BatchNorm1d((self.vector_size + len_after_AE) // 2)
-#         self.l4 = torch.nn.Linear((self.vector_size + len_after_AE) // 2, self.vector_size)
-#         self.dr = torch.nn.Dropout(drop_out_rating)
-#         self.ac = torch.nn.ReLU()
-#
-#     def forward(self, X1, X2):
-#         X = X1 + X2
-#         X = self.dr(self.bn1(self.ac(self.l1(X))))
-#         X = self.att1(X)
-#         X = self.l2(X)
-#         X_AE = self.dr(self.bn3(self.ac(self.l3(X))))
-#         X_AE = self.l4(X_AE)
-#         return X, X_AE
-#
-# class cov(torch.nn.Module):
-#     def __init__(self, vector_size):
-#         super(cov, self).__init__()
-#
-#         self.vector_size = vector_size
-#         self.co2_1 = torch.nn.Conv2d(1, 1, kernel_size=(2, Cov2Dsize))
-#         self.co1_1 = torch.nn.Conv1d(1, 1, kernel_size=Cov1Dsize)
-#         self.pool1 = torch.nn.AdaptiveAvgPool1d(len_after_AE)
-#         self.ac = torch.nn.ReLU()
-#
-#     def forward(self, X1, X2):
-#         X = torch.cat((X1, X2), 0)
-#
-#         X = X.view(-1, 1, 2, self.vector_size // 2)
-#
-#         X = self.ac(self.co2_1(X))
-#
-#         X = X.view(-1, self.vector_size // 2 - Cov2Dsize + 1, 1)
-#         X = X.permute(0, 2, 1)
-#         X = self.ac(self.co1_1(X))
-#
-#         X = self.pool1(X)
-#
-#         X = X.contiguous().view(-1, len_after_AE)
-#
-#         return X
 
 class CrossAttention(nn.Module):
     def __init__(self, feature_dim1, feature_dim2, hidden_dim):
@@ -221,29 +120,7 @@ class BiCrossAttention(nn.Module):
 
         return attended_features_end
 
-# class Interaction(torch.nn.Module):
-#     def __init__(self, input_dim):
-#         super(Interaction, self).__init__()
-#
-#         self.ae1 = AE1(input_dim)  # Joining together
-#         self.ae2 = AE2(input_dim)
-#         # self.cov = cov(input_dim)  # cov
-#
-#
-#     def forward(self, X1, X2):
-#         X_aec, X_AE1 = self.ae1(X1, X2)
-#         X_aea, X_AE2 = self.ae2(X1, X2)
-#         # X_cnn = self.cov(X1, X2)
-#
-#         # X = torch.cat((X1, X2, X3), 1)
-#         # return X_aec, X_aea, X_cnn, X_AE1, X_AE2
-#         return X_aec, X_aea, X_AE1, X_AE2
 
-# num_heads = 4
-# drop_out_rating = 0.3
-# len_after_AE = 128
-# Cov1Dsize = 2
-# Cov2Dsize = 4
 
 class MFFPDA(nn.Module):
     def __init__(self, probiotics_dim, diseases_dim, embed_dim, batch_size, dropout1, dropout2):
@@ -399,11 +276,9 @@ class MFFPDA(nn.Module):
 
     def forward(self, probiotic_features, disease_features, device):
 
-        #, probiotic6, probiotic7, probiotic8
         probiotic1, probiotic2, probiotic3, probiotic4, probiotic5 = probiotic_features.chunk(
             5, 1)
 
-        #, disease7, disease8, disease9
         disease1, disease2, disease3, disease4, disease5, disease6 = disease_features.chunk(
             6, 1)
 
@@ -427,23 +302,6 @@ class MFFPDA(nn.Module):
         x_probiotic5 = F.dropout(x_probiotic5, training=self.training, p=self.dropout1)
         x_probiotic5 = self.probiotic_layer5_1(x_probiotic5)
 
-        # x_probiotic6 = F.relu(self.probiotic6_bn(self.probiotic_layer6(probiotic6.float().to(device))), inplace=True)
-        # x_probiotic6 = F.dropout(x_probiotic6, training=self.training, p=self.dropout1)
-        # x_probiotic6 = self.probiotic_layer6_1(x_probiotic6)
-        #
-        # x_probiotic7 = F.relu(self.probiotic7_bn(self.probiotic_layer7(probiotic7.float().to(device))), inplace=True)
-        # x_probiotic7 = F.dropout(x_probiotic7, training=self.training, p=self.dropout1)
-        # x_probiotic7 = self.probiotic_layer7_1(x_probiotic7)
-        #
-        # x_probiotic8 = F.relu(self.probiotic8_bn(self.probiotic_layer8(probiotic8.float().to(device))), inplace=True)
-        # x_probiotic8 = F.dropout(x_probiotic8, training=self.training, p=self.dropout1)
-        # x_probiotic8 = self.probiotic_layer8_1(x_probiotic8)
-
-        # x_probiotic9 = F.relu(self.probiotic9_bn(self.probiotic_layer9(probiotic9.float().to(device))), inplace=True)
-        # x_probiotic9 = F.dropout(x_probiotic9, training=self.training, p=self.dropout1)
-        # x_probiotic9 = self.probiotic_layer9_1(x_probiotic9)
-
-        #, x_probiotic6, x_probiotic7, x_probiotic8
         probiotics = [x_probiotic1, x_probiotic2, x_probiotic3, x_probiotic4, x_probiotic5]
 
         x_disease1 = F.relu(self.disease1_bn(self.disease_layer1(disease1.float().to(device))), inplace=True)
@@ -470,23 +328,6 @@ class MFFPDA(nn.Module):
         x_disease6 = F.dropout(x_disease6, training=self.training, p=self.dropout1)
         x_disease6 = self.disease_layer6_1(x_disease6)
 
-        # x_disease7 = F.relu(self.disease7_bn(self.disease_layer7(disease7.float().to(device))), inplace=True)
-        # x_disease7 = F.dropout(x_disease7, training=self.training, p=self.dropout1)
-        # x_disease7 = self.disease_layer7_1(x_disease7)
-        #
-        # x_disease8 = F.relu(self.disease8_bn(self.disease_layer8(disease8.float().to(device))), inplace=True)
-        # x_disease8 = F.dropout(x_disease8, training=self.training, p=self.dropout1)
-        # x_disease8 = self.disease_layer8_1(x_disease8)
-        #
-        # x_disease9 = F.relu(self.disease9_bn(self.disease_layer9(disease9.float().to(device))), inplace=True)
-        # x_disease9 = F.dropout(x_disease9, training=self.training, p=self.dropout1)
-        # x_disease9 = self.disease_layer9_1(x_disease9)
-
-        # x_disease10 = F.relu(self.disease10_bn(self.disease_layer10(disease10.float().to(device))), inplace=True)
-        # x_disease10 = F.dropout(x_disease10, training=self.training, p=self.dropout1)
-        # x_disease10 = self.disease_layer10_1(x_disease10)
-
-        #, x_disease7, x_disease8, x_disease9
         diseases = [x_disease1, x_disease2, x_disease3, x_disease4, x_disease5, x_disease6]
 
         all_probiotics = torch.cat(probiotics, dim=1)
@@ -553,7 +394,6 @@ class MFFPDA(nn.Module):
         ###########################################################################################################
 
 
-        ###########################################################################################################
         # Inter = torch.cat((X, Inner_Product, Outer_Product), dim=1)
         Inter = torch.cat((Inner_Product, Outer_Product, probiotic_disease_attention), dim=1)
         # Inter = probiotic_disease_attention
