@@ -34,8 +34,8 @@ def train(model, loader, criterion, opt, device):
 
         probiotic, disease, label = data
 
-        output, input1,input2, X_AE1, X_AE2 = model(probiotic, disease, device)
-        loss = 5*criterion(output, label.float().to(device)) + criterion2(input1, X_AE1) + criterion2(input2, X_AE2)
+        output = model(probiotic, disease, device)
+        loss = criterion(output, label.float().to(device))
 
         opt.zero_grad()
         loss.backward()
@@ -56,7 +56,7 @@ def validate(model, loader, device):
         for data in tqdm(loader, desc='Iteration'):
 
             probiotic, disease, label = data
-            output, _, _, _, _ = model(probiotic, disease, device)
+            output = model(probiotic, disease, device)
 
             y_true.append(label)
             y_pred.append(output)
