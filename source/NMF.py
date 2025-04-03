@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Time : 2024/4/29 上午10:35
-# @Author : BoWei Li
-# @File : NMF.py
-# @Software : PyCharm
 import numpy as np
 from sklearn.decomposition import NMF
 
