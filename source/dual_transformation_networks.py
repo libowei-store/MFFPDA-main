@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Time : 2024/4/30 上午10:46
-# @Author : BoWei Li
-# @File : dual_transformation_networks.py
-# @Software : PyCharm
 import numpy as np
 import pandas as pd
 def dual_transformation_networks_calculate(network):
