@@ -144,7 +144,7 @@ def load_data(args):
         val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
 
 
-        model = MFFPDA(576, 2115, args.embed_dim, args.batch_size, args.droprate, args.droprate).to(args.device)
+        model = MFFPDA(72*5, 235*6, args.embed_dim, args.batch_size, args.droprate, args.droprate).to(args.device)
         if args.mode == 'train':
             Regression_criterion = nn.CrossEntropyLoss()
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -257,7 +257,7 @@ def main():
     print('dropout rate: ' + str(args.droprate))
     print('learning rate: ' + str(args.lr))
     print('dimension of embedding: ' + str(args.embed_dim))
-    setup_seed(62)
+    # setup_seed(60)
     load_data(args)
 
 
