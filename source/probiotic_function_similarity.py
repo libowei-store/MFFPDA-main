@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Time : 2024/4/25 上午9:59
-# @Author : BoWei Li
-# @File : probiotic_function_similarity.py
-# @Software : PyCharm
-
 import pandas as pd
 import numpy as np
 
