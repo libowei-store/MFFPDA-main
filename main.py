@@ -223,7 +223,7 @@ def load_data(args):
 def main():
     # Training settings
     parser = argparse.ArgumentParser(description='Model')
-    parser.add_argument('--epochs', type=int, default=200,
+    parser.add_argument('--epochs', type=int, default=128,
                         metavar='N', help='number of epochs to train')
     parser.add_argument('--lr', type=float, default=0.0001,
                         metavar='FLOAT', help='learning rate')
